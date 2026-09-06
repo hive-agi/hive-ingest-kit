@@ -1,0 +1,5 @@
+{:project-id "hive-ingest-kit"
+ :parent "hive"
+ :description "Shared helpers OVER hive-spi.ingest for corpus providers: response-shape rule chain, plaintext and RFC parsers, body->document. Depends on the SPI, never on a pipeline."
+ :language :clojure
+ :tags ["ingest" "spi" "provider-kit" "foss"] :carto {:source-roots ["resources" "src" "test"]}}
