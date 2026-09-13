@@ -1,7 +1,7 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.12.5"}
         ;; hive-dsl — Result monad, error taxonomy.
-        io.github.hive-agi/hive-dsl  {:mvn/version "0.5.22"}
+        io.github.hive-agi/hive-dsl  {:mvn/version "0.5.23"}
         ;; hive-spi — the ingestion seam: ISource / IParserRule ports, the
         ;; Document value object, the owner-scoped registry.
         io.github.hive-agi/hive-spi  {:mvn/version "1.1.0"}
@@ -17,5 +17,5 @@
          :exec-fn     cognitect.test-runner.api/test}
 
   ;; Clojars publishing. version = the repo's VERSION file.
-  :build {:deps {io.github.hive-agi/hive-build {:mvn/version "0.1.10"}}
+  :build {:deps {io.github.hive-agi/hive-build {:mvn/version "0.1.14"}}
           :ns-default hive-build.api}}}
