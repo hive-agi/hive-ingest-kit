@@ -1,12 +1,12 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.12.6"}
         ;; hive-dsl — Result monad, error taxonomy.
-        io.github.hive-agi/hive-dsl  {:mvn/version "0.5.28"}
+        io.github.hive-agi/hive-dsl  {:mvn/version "0.5.29"}
         ;; hive-spi — the ingestion seam: ISource / IParserRule ports, the
         ;; Document value object, the owner-scoped registry.
         io.github.hive-agi/hive-spi  {:mvn/version "1.1.1"}
         ;; hive-html — HTML page to text, headings, links and metadata.
-        io.github.hive-agi/hive-html {:mvn/version "0.1.4"}}
+        io.github.hive-agi/hive-html {:mvn/version "0.1.5"}}
 
  :aliases
  {:test {:extra-paths ["test"]
@@ -17,5 +17,5 @@
          :exec-fn     cognitect.test-runner.api/test}
 
   ;; Clojars publishing. version = the repo's VERSION file.
-  :build {:deps {io.github.hive-agi/hive-build {:mvn/version "0.1.18"}}
+  :build {:deps {io.github.hive-agi/hive-build {:mvn/version "0.1.19"}}
           :ns-default hive-build.api}}}
