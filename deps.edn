@@ -1,12 +1,12 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.12.6"}
         ;; hive-dsl — Result monad, error taxonomy.
-        io.github.hive-agi/hive-dsl  {:mvn/version "0.5.34"}
+        io.github.hive-agi/hive-dsl  {:mvn/version "0.5.36"}
         ;; hive-spi — the ingestion seam: ISource / IParserRule ports, the
         ;; Document value object, the owner-scoped registry.
-        io.github.hive-agi/hive-spi  {:mvn/version "1.4.2"}
+        io.github.hive-agi/hive-spi  {:mvn/version "1.4.4"}
         ;; hive-html — HTML page to text, headings, links and metadata.
-        io.github.hive-agi/hive-html {:mvn/version "0.1.9"}}
+        io.github.hive-agi/hive-html {:mvn/version "0.1.10"}}
 
  :aliases
  {:test {:extra-paths ["test"]
