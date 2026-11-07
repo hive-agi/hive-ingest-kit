@@ -35,17 +35,12 @@
 ;; =============================================================================
 
 (deftest profile-classification
-  (testing "text/plain RFC bodies route to the RFC profile"
-    (doseq [ctx [{:url "https://www.rfc-editor.org/rfc/rfc2616.txt"
-                  :content-type "text/plain;charset=utf-8"
-                  :body rfc-body}
-                 {:url "https://example.com/spec" ; no suffix, body identifies it
-                  :content-type "text/plain"
-                  :body rfc-body}]]
-      (let [profile (rules/select-profile ctx)]
-        (is (= :parser-rule/rfc-text (:profile/id profile)) (pr-str ctx))
-        (is (= :format/text (:adt/variant (:profile/format profile))))
-        (is (= :content/spec (:profile/content-kind profile))))))
+  (testing "with no provider rule registered, an RFC body is ordinary plaintext"
+    (let [profile (rules/select-profile {:url "https://www.rfc-editor.org/rfc/rfc2616.txt"
+                                         :content-type "text/plain;charset=utf-8"
+                                         :body rfc-body})]
+      (is (= :parser-rule/plain-text (:profile/id profile)))
+      (is (= :content/reference (:profile/content-kind profile)))))
 
   (testing "other text/plain bodies route to the plaintext profile"
     (let [profile (rules/select-profile {:url "https://example.com/notes.txt"
@@ -100,16 +95,9 @@
 ;; Rule order
 ;; =============================================================================
 
-(deftest rfc-rule-precedes-the-generic-plaintext-rule
-  (is (= [:parser-rule/rfc-text :parser-rule/plain-text
-          :parser-rule/article :parser-rule/html]
-         (mapv ports/rule-id rules/default-rules)))
-  (testing "both plaintext rules claim an RFC; the RFC rule wins by order"
-    (let [ctx {:url "https://www.rfc-editor.org/rfc/rfc2616.txt"
-               :content-type "text/plain"
-               :body rfc-body}]
-      (is (every? #(ports/rule-applies? % ctx) (take 2 rules/default-rules)))
-      (is (= :parser-rule/rfc-text (:profile/id (rules/select-profile ctx)))))))
+(deftest the-built-in-chain-order
+  (is (= [:parser-rule/plain-text :parser-rule/article :parser-rule/html]
+         (mapv ports/rule-id rules/default-rules))))
 
 (deftest the-last-rule-is-total
   (let [html-rule (last rules/default-rules)]
