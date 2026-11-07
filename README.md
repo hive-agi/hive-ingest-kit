@@ -12,8 +12,12 @@ publishable without access to any closed host.
 |----------------------------------|------------------------------------------------------------------------------------------|
 | `hive-ingest-kit.web-docs`       | `body->document`: a fetched or read body as a `Document`, via the profile its shape selects. Also the `web-docs` `ISource` over HTTP. |
 | `hive-ingest-kit.parser-rules`   | The ordered rule chain that turns `{:url :content-type :body}` into a parse profile. Rules registered through `hive-spi.ingest.registry` run first. |
-| `hive-ingest-kit.plaintext-parser` | `IWebsiteParser` implementations for `text/plain`: verbatim plaintext, and IETF RFC text with masthead, headings and cross-references. |
-| `hive-ingest-kit.rfc-structure`  | The pure grammar of RFC plaintext: depagination, masthead, section headings, section splitting. |
+| `hive-ingest-kit.plaintext-parser` | The `IWebsiteParser` for `text/plain`: verbatim plaintext. |
+
+RFC plaintext (masthead, headings, cross-references) is parsed by
+[`hive-ingestor-rfc`](https://github.com/hive-agi/hive-ingestor-rfc), which
+registers its own parse rule; `body->document` carries its `:rfc/*` keys into
+the document metadata.
 
 ## The seam every transport shares
 
@@ -43,11 +47,6 @@ parser, implement `hive-spi.ingest.ports/IParserRule` and register it:
 
 (registry/register-parser-rule! "my.provider" :my/rule {:rule my-rule :priority 50})
 ```
-
-## Fixture
-
-`hive_ingest_kit/fixtures/sample-rfc.txt` ships on the classpath: a miniature
-RFC carrying every structural feature the parser reads, for a consumer's suite.
 
 ## License
 

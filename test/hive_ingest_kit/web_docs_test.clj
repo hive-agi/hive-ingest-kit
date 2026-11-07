@@ -14,10 +14,10 @@
 ;;
 ;; SPDX-License-Identifier: MIT
 
-(def ^:private sample-rfc
-  (slurp (io/resource "hive_ingest_kit/fixtures/sample-rfc.txt")))
+(def ^:private notes-body
+  "Notes\n\n  Indented line.\n\nClosing line.")
 
-(def ^:private rfc-url "https://www.rfc-editor.org/rfc/rfc9999.txt")
+(def ^:private notes-url "https://example.com/notes.txt")
 
 (defn- stub-http-get
   "An http-get returning BODY under CONTENT-TYPE for every URL."
@@ -51,31 +51,27 @@
 ;; Routing by response shape
 ;; =============================================================================
 
-(deftest rfc-response-produces-a-spec-document
-  (let [doc (fetch-one rfc-url (stub-http-get sample-rfc "text/plain;charset=utf-8"))
-        md  (:document/metadata doc)]
-    (testing "format and content kind come from the profile, not a hardcode"
-      (is (= :format/text (:adt/variant (:document/format doc))))
-      (is (= :content/spec (:content-kind md))))
-    (testing "front matter reaches the document metadata"
-      (is (= "Example Protocol for Testing" (:title md)))
-      (is (= "RFC 9999" (:tool-name md)))
-      (is (= "9999" (:rfc/number md)))
-      (is (= "Standards Track" (:rfc/category md)))
-      (is (= "9998" (:rfc/obsoletes md)))
-      (is (= "https://www.rfc-editor.org/info/rfc9999" (:canonical-url md)))
-      (is (str/starts-with? (:description md) "This protocol does nothing")))
-    (testing "cross-references become links"
-      (is (= ["RFC 1945" "RFC 2616"] (mapv :text (:links md)))))))
-
 (deftest plaintext-line-structure-survives
-  (let [doc (fetch-one rfc-url (stub-http-get sample-rfc "text/plain"))
+  (let [doc     (fetch-one notes-url (stub-http-get notes-body "text/plain"))
         content (:document/content doc)]
     (testing "newlines and indentation are preserved"
-      (is (> (count (str/split-lines content)) 20))
-      (is (str/includes? content "       Indented syntax block.")))
-    (testing "page furniture is stripped"
-      (is (not (str/includes? content "[Page 1]"))))))
+      (is (= 5 (count (str/split-lines content))))
+      (is (str/includes? content "  Indented line.")))))
+
+(deftest rfc-page-keys-reach-the-document-metadata
+  (testing "a parser that yields :rfc/* keys (hive-ingestor-rfc's) has them carried through"
+    (let [parser (reify page/IWebsiteParser
+                   (parse-website-page [_ _body {:keys [url]}]
+                     (r/ok {:url url :title "T" :description nil :canonical-url nil
+                            :content "c" :headings [] :links []
+                            :rfc/number "9999" :rfc/category "Standards Track"})))
+          md     (:document/metadata
+                  (:ok (web/body->document "c" {:url notes-url :content-type "text/plain"
+                                                        :parser parser}
+                                           {})))]
+      (is (= "9999" (:rfc/number md)))
+      (is (= "Standards Track" (:rfc/category md)))
+      (is (= "RFC 9999" (:tool-name md))))))
 
 (deftest non-rfc-plaintext-is-a-reference-document
   (let [doc (fetch-one "https://example.com/notes.txt"
@@ -103,23 +99,23 @@
                    (r/ok {:url url :title "Injected" :description nil
                           :canonical-url nil :content "Injected content"
                           :headings [] :links []})))
-        result (ports/fetch-documents (web/web-doc-source [rfc-url] parser)
-                                      {:http-get-fn (stub-http-get sample-rfc "text/plain")})
+        result (ports/fetch-documents (web/web-doc-source [notes-url] parser)
+                                      {:http-get-fn (stub-http-get notes-body "text/plain")})
         doc    (first (:ok result))]
     (is (= "Injected content" (:document/content doc)))
     (is (= "Injected" (get-in doc [:document/metadata :title])))
     (testing "the profile still classifies the response"
-      (is (= :content/spec (get-in doc [:document/metadata :content-kind]))))))
+      (is (= :content/reference (get-in doc [:document/metadata :content-kind]))))))
 
 ;; =============================================================================
 ;; body->document, the transport-free seam
 ;; =============================================================================
 
 (deftest body-to-document-needs-no-transport
-  (let [result (web/body->document sample-rfc {:url rfc-url :content-type "text/plain"} {})]
+  (let [result (web/body->document notes-body {:url notes-url :content-type "text/plain"} {})]
     (is (r/ok? result))
-    (is (= rfc-url (:document/source (:ok result))))
-    (is (= :content/spec (get-in (:ok result) [:document/metadata :content-kind]))))
+    (is (= notes-url (:document/source (:ok result))))
+    (is (= :content/reference (get-in (:ok result) [:document/metadata :content-kind]))))
   (testing "a blank body is an error, not an exception"
     (is (r/err? (web/body->document "" {:url "https://x/y" :content-type "text/plain"} {})))))
 

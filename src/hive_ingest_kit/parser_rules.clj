@@ -5,7 +5,8 @@
    :profile/parser}. Adding a response shape means appending a rule, not
    editing the folder. The port is hive-spi.ingest.ports/IParserRule; rules a
    provider registered through hive-spi.ingest.registry run before the
-   built-in chain."
+   built-in chain. RFC plaintext is claimed by the rule hive-ingestor-rfc
+   registers there; this chain carries none."
   (:require [clojure.string :as str]
             [hive-html.page :as page]
             [hive-ingest-kit.plaintext-parser :as plaintext]
@@ -34,13 +35,6 @@
     (= "text/plain" mime)
     (boolean (re-find #"(?i)\.(txt|text)(\?.*)?$" (str url)))))
 
-(defn rfc-document?
-  "True when the response body or URL identifies an IETF RFC."
-  [{:keys [url body]}]
-  (boolean
-   (or (re-find #"(?i)rfc-?editor\.org/rfc/rfc\d+" (str url))
-       (re-find #"(?im)^Request for Comments:\s*\d+" (subs (str body) 0 (min 4000 (count (str body))))))))
-
 (defn article-document?
   "True when the response advertises itself as a long-form article: an OpenGraph
    og:type of `article`, or an <article> element. Both live in the first pages of
@@ -55,16 +49,6 @@
 ;; =============================================================================
 ;; Rules
 ;; =============================================================================
-
-(defrecord RfcTextRule []
-  ports/IParserRule
-  (rule-id [_] :parser-rule/rfc-text)
-  (rule-applies? [_ ctx] (and (plain-text? ctx) (rfc-document? ctx)))
-  (rule-profile [this _]
-    {:profile/id           (ports/rule-id this)
-     :profile/format       (model/document-format :format/text)
-     :profile/content-kind :content/spec
-     :profile/parser       (plaintext/rfc-text-parser)}))
 
 (defrecord PlainTextRule []
   ports/IParserRule
@@ -98,8 +82,7 @@
 
 (def default-rules
   "Rules in precedence order. The last rule matches unconditionally."
-  [(->RfcTextRule)
-   (->PlainTextRule)
+  [(->PlainTextRule)
    (->ArticleRule)
    (->HtmlRule)])
 
